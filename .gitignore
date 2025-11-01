@@ -1,0 +1,72 @@
+# Entorno virtual
+env/
+venv/
+ENV/
+.venv/
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos de base de datos SQLite
+*.sqlite3
+
+# Archivos de configuración local
+*.env
+*.local
+*.log
+
+# Archivos de migración
+**/migrations/
+**/migrations/*.py
+**/migrations/*.pyc
+
+# Archivos de media y estáticos generados
+/media/
+staticfiles/
+static/
+
+# Archivos de Django
+db.sqlite3
+settings_local.py
+
+# Archivos de IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Dependencias
+requirements.txt
+Pipfile.lock
+poetry.lock
+
+# Archivos de cobertura y pruebas
+htmlcov/
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.pot
+*.pyc
+
+# Archivos de compilación
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST
+
+# Archivos de frontend (si usas React/Vite en paralelo)
+node_modules/
+*.tsbuildinfo
+npm-debug.log
+yarn-debug.log
+yarn-error.log
