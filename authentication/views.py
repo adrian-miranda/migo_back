@@ -231,3 +231,95 @@ def obtener_usuario(request, id_usuario):
             'error': 'Error al obtener usuario',
             'details': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def listar_tecnicos_disponibles(request):
+    """
+    Obtener técnicos que NO están asignados a tickets activos
+    Un técnico está ocupado si tiene tickets en estado Abierto (1) o En Proceso (2)
+    """
+    try:
+        from tickets.models import Ticket
+        
+        # Obtener IDs de técnicos ocupados (con tickets abiertos o en proceso)
+        tecnicos_ocupados = Ticket.objects.filter(
+            estado_id__in=[1, 2],  # Abierto o En Proceso
+            tecnico_asignado_id__isnull=False
+        ).values_list('tecnico_asignado_id', flat=True).distinct()
+        
+        # Obtener todos los técnicos (rol_id = 1)
+        tecnicos = Usuarios.objects.select_related(
+            'personas_id_personas',
+            'roles_id_roles',
+            'cargos_id_cargos'
+        ).filter(
+            roles_id_roles__id_roles=1  # Solo técnicos
+        ).exclude(
+            id_usuarios__in=tecnicos_ocupados  # Excluir ocupados
+        )
+        
+        serializer = UsuarioBasicoSerializer(tecnicos, many=True)
+        
+        return Response({
+            'success': True,
+            'count': tecnicos.count(),
+            'tecnicos': serializer.data,
+            'ocupados': len(tecnicos_ocupados)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def listar_todos_tecnicos(request):
+    """
+    Obtener todos los técnicos con su estado (disponible/ocupado)
+    """
+    try:
+        from tickets.models import Ticket
+        
+        # Obtener todos los técnicos
+        tecnicos = Usuarios.objects.select_related(
+            'personas_id_personas',
+            'roles_id_roles',
+            'cargos_id_cargos'
+        ).filter(roles_id_roles__id_roles=1)
+        
+        # Obtener técnicos ocupados
+        tecnicos_ocupados_ids = Ticket.objects.filter(
+            estado_id__in=[1, 2],
+            tecnico_asignado_id__isnull=False
+        ).values_list('tecnico_asignado_id', flat=True).distinct()
+        
+        # Crear respuesta con estado
+        tecnicos_data = []
+        for tecnico in tecnicos:
+            tecnico_dict = UsuarioBasicoSerializer(tecnico).data
+            tecnico_dict['disponible'] = tecnico.id_usuarios not in tecnicos_ocupados_ids
+            
+            # Contar tickets activos del técnico
+            tickets_activos = Ticket.objects.filter(
+                tecnico_asignado_id=tecnico.id_usuarios,
+                estado_id__in=[1, 2]
+            ).count()
+            tecnico_dict['tickets_activos'] = tickets_activos
+            
+            tecnicos_data.append(tecnico_dict)
+        
+        return Response({
+            'success': True,
+            'count': len(tecnicos_data),
+            'tecnicos': tecnicos_data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

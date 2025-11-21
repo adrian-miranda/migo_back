@@ -8,7 +8,9 @@ from .views import (
     logout_view,
     perfil_view,
     listar_usuarios,
-    obtener_usuario
+    obtener_usuario,
+    listar_tecnicos_disponibles,
+    listar_todos_tecnicos, 
 )
 
 app_name = 'authentication'
@@ -25,4 +27,8 @@ urlpatterns = [
     # Gestión de usuarios
     path('usuarios/', listar_usuarios, name='listar-usuarios'),
     path('usuarios/<int:id_usuario>/', obtener_usuario, name='obtener-usuario'),
+
+    # Técnicos
+    path('tecnicos/disponibles/', listar_tecnicos_disponibles, name='tecnicos-disponibles'),
+    path('tecnicos/todos/', listar_todos_tecnicos, name='todos-tecnicos'),
 ]
