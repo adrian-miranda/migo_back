@@ -31,4 +31,5 @@ urlpatterns = [
     # Técnicos
     path('tecnicos/disponibles/', listar_tecnicos_disponibles, name='tecnicos-disponibles'),
     path('tecnicos/todos/', listar_todos_tecnicos, name='todos-tecnicos'),
+    
 ]
