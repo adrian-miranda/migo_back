@@ -605,3 +605,68 @@ def mis_tickets(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def cancelar_ticket(request, id_ticket):
+    """
+    Cancelar un ticket (solo si está Abierto y es el creador)
+    """
+    try:
+        ticket = Ticket.objects.get(id_ticket=id_ticket)
+        
+        # Obtener usuario del request
+        user_id = request.data.get('usuario_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'usuario_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar que el usuario sea el creador
+        if ticket.usuario_creador_id.id_usuarios != int(user_id):
+            return Response({
+                'success': False,
+                'error': 'Solo el creador puede cancelar el ticket'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Verificar que el ticket esté en estado "Abierto"
+        if ticket.estado_id.id_estado_ticket != 1:
+            return Response({
+                'success': False,
+                'error': 'Solo se pueden cancelar tickets en estado Abierto'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Guardar estado anterior para historial
+        estado_anterior = ticket.estado_id
+        
+        # Cambiar estado a Cancelado (id: 5)
+        ticket.estado_id_id = 5
+        ticket.save()
+        
+        # Registrar en historial
+        HistorialTicket.objects.create(
+            ticket_id=ticket,
+            usuario_id=ticket.usuario_creador_id,
+            estado_anterior_id=estado_anterior,
+            estado_nuevo_id_id=5,
+            comentario='Ticket cancelado por el usuario creador'
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Ticket cancelado exitosamente'
+        }, status=status.HTTP_200_OK)
+        
+    except Ticket.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Ticket no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
