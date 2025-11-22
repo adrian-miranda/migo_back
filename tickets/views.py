@@ -670,3 +670,89 @@ def cancelar_ticket(request, id_ticket):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def mis_tickets(request):
+    """
+    Obtener todos los tickets de un usuario
+    """
+    try:
+        user_id = request.GET.get('user_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'user_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener tickets del usuario
+        tickets = Ticket.objects.filter(
+            usuario_creador_id=user_id
+        ).select_related(
+            'categoria_id',
+            'estado_id',
+            'prioridad_id',
+            'tecnico_asignado_id',
+            'tecnico_asignado_id__personas_id_personas'
+        ).order_by('-fecha_creacion')
+        
+        # Serializar
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'success': True,
+            'tickets': serializer.data,
+            'total': tickets.count()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def tickets_pendientes(request):
+    """
+    Obtener tickets pendientes (Abierto o En Proceso) de un usuario
+    """
+    try:
+        user_id = request.GET.get('user_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'user_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener tickets pendientes (estado 1=Abierto, 2=En Proceso)
+        tickets = Ticket.objects.filter(
+            usuario_creador_id=user_id,
+            estado_id__in=[1, 2]
+        ).select_related(
+            'categoria_id',
+            'estado_id',
+            'prioridad_id',
+            'tecnico_asignado_id',
+            'tecnico_asignado_id__personas_id_personas'
+        ).order_by('-fecha_creacion')
+        
+        # Serializar
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'success': True,
+            'tickets': serializer.data,
+            'total': tickets.count()
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

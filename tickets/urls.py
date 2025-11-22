@@ -16,6 +16,8 @@ from .views import (
     eliminar_ticket,
     mis_tickets,
     cancelar_ticket,
+    mis_tickets,
+    tickets_pendientes,
     
     # Historial
     obtener_historial_ticket,
@@ -40,7 +42,9 @@ urlpatterns = [
     path('<int:id_ticket>/actualizar/', actualizar_ticket, name='actualizar-ticket'),
     path('<int:id_ticket>/eliminar/', eliminar_ticket, name='eliminar-ticket'),
     path('<int:id_ticket>/cancelar/', cancelar_ticket, name='cancelar-ticket'),
-    
+    path('mis-tickets/', mis_tickets, name='mis-tickets'),
+    path('tickets-pendientes/', tickets_pendientes, name='tickets-pendientes'),
+
     # Historial
     path('<int:id_ticket>/historial/', obtener_historial_ticket, name='historial-ticket'),
     
