@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import Q
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import (
     CategoriaTicket,
@@ -187,9 +188,158 @@ def obtener_ticket(request, id_ticket):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def crear_ticket(request):
+    """Crear un nuevo ticket con prioridad automática"""
+    try:
+        # Obtener datos del request
+        titulo = request.data.get('titulo')
+        descripcion = request.data.get('descripcion')
+        categoria_id = request.data.get('categoria_id')
+        user_id = request.data.get('usuario_creador_id')
+        
+        # Validaciones básicas
+        if not titulo or not descripcion or not categoria_id or not user_id:
+            return Response({
+                'success': False,
+                'error': 'Todos los campos son obligatorios'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener usuario con cargo
+        usuario = Usuarios.objects.select_related('cargos_id_cargos').get(id_usuarios=user_id)
+        
+        # Obtener categoría
+        categoria = CategoriaTicket.objects.get(id_categoria_ticket=categoria_id)
+        
+        # CALCULAR PRIORIDAD AUTOMÁTICAMENTE
+        peso_cargo = usuario.cargos_id_cargos.peso_prioridad
+        multiplicador_categoria = float(categoria.multiplicador_prioridad)
+        
+        # Calcular puntaje de prioridad
+        puntaje_prioridad = peso_cargo * multiplicador_categoria
+        
+        # Determinar nivel de prioridad basado en puntaje
+        if puntaje_prioridad >= 6.0:
+            prioridad_id = 4  # Urgente
+        elif puntaje_prioridad >= 4.0:
+            prioridad_id = 3  # Alta
+        elif puntaje_prioridad >= 2.0:
+            prioridad_id = 2  # Media
+        else:
+            prioridad_id = 1  # Baja
+        
+        # Crear ticket
+        ticket = Ticket.objects.create(
+            titulo=titulo,
+            descripcion=descripcion,
+            categoria_id_id=categoria_id,
+            prioridad_id_id=prioridad_id,
+            usuario_creador_id_id=user_id,
+            estado_id_id=1  # Estado: Abierto
+        )
+        
+        # Serializar respuesta
+        response_serializer = TicketDetailSerializer(ticket)
+        
+        return Response({
+            'success': True,
+            'message': 'Ticket creado exitosamente',
+            'ticket': response_serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
+    except Usuarios.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Usuario no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except CategoriaTicket.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Categoría no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
+        return Response({
+            'success': False,
+            'error': f'Error en el servidor: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    """Crear un nuevo ticket con prioridad automática"""
+    try:
+        serializer = TicketCreateSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response({
+                'success': False,
+                'error': 'Datos inválidos',
+                'details': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener usuario
+        user_id = request.data.get('usuario_creador_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'usuario_creador_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        usuario = Usuarios.objects.select_related('cargos_id_cargos').get(id_usuarios=user_id)
+        
+        # Obtener categoría
+        categoria_id = serializer.validated_data.get('categoria_id')
+        categoria = CategoriaTicket.objects.get(id_categoria_ticket=categoria_id.id_categoria_ticket)
+        
+        # CALCULAR PRIORIDAD AUTOMÁTICAMENTE
+        peso_cargo = usuario.cargos_id_cargos.peso_prioridad
+        multiplicador_categoria = float(categoria.multiplicador_prioridad)
+        
+        # Calcular puntaje de prioridad
+        puntaje_prioridad = peso_cargo * multiplicador_categoria
+        
+        # Determinar nivel de prioridad basado en puntaje
+        if puntaje_prioridad >= 6.0:
+            prioridad_id = 4  # Urgente
+        elif puntaje_prioridad >= 4.0:
+            prioridad_id = 3  # Alta
+        elif puntaje_prioridad >= 2.0:
+            prioridad_id = 2  # Media
+        else:
+            prioridad_id = 1  # Baja
+        
+        # Crear ticket con prioridad calculada
+        ticket = serializer.save(
+            usuario_creador_id=usuario,
+            estado_id_id=1,  # Estado: Abierto
+            prioridad_id_id=prioridad_id  # Prioridad automática
+        )
+        
+        # Serializar respuesta
+        response_serializer = TicketDetailSerializer(ticket)
+        
+        return Response({
+            'success': True,
+            'message': 'Ticket creado exitosamente',
+            'ticket': response_serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
+    except Usuarios.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Usuario no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except CategoriaTicket.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Categoría no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     """Crear un nuevo ticket"""
     try:
         serializer = TicketCreateSerializer(data=request.data)
@@ -240,6 +390,7 @@ def crear_ticket(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@csrf_exempt
 @api_view(['PUT', 'PATCH'])
 @permission_classes([AllowAny])
 def actualizar_ticket(request, id_ticket):
@@ -303,6 +454,7 @@ def actualizar_ticket(request, id_ticket):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@csrf_exempt
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
 def eliminar_ticket(request, id_ticket):
@@ -391,6 +543,61 @@ def estadisticas_tickets(request):
                 'por_prioridad': por_prioridad,
                 'por_categoria': por_categoria
             }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def mis_tickets(request):
+    """
+    Obtener solo los tickets del usuario autenticado (trabajador)
+    """
+    try:
+        # Obtener user_id del query param (temporal, luego será del token)
+        user_id = request.query_params.get('user_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'user_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener tickets del usuario
+        tickets = Ticket.objects.filter(
+            usuario_creador_id=user_id
+        ).select_related(
+            'categoria_id',
+            'estado_id',
+            'prioridad_id',
+            'tecnico_asignado_id'
+        ).order_by('-fecha_creacion')
+        
+        # Filtros opcionales
+        estado = request.query_params.get('estado')
+        if estado:
+            tickets = tickets.filter(estado_id__nombre_estado=estado)
+        
+        categoria = request.query_params.get('categoria')
+        if categoria:
+            tickets = tickets.filter(categoria_id__nombre_categoria=categoria)
+        
+        prioridad = request.query_params.get('prioridad')
+        if prioridad:
+            tickets = tickets.filter(prioridad_id__nombre_prioridad=prioridad)
+        
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'success': True,
+            'count': tickets.count(),
+            'tickets': serializer.data
         }, status=status.HTTP_200_OK)
         
     except Exception as e:

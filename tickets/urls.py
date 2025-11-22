@@ -14,6 +14,7 @@ from .views import (
     crear_ticket,
     actualizar_ticket,
     eliminar_ticket,
+    mis_tickets,
     
     # Historial
     obtener_historial_ticket,
@@ -32,6 +33,7 @@ urlpatterns = [
     
     # Tickets CRUD
     path('', listar_tickets, name='listar-tickets'),
+    path('mis-tickets/', mis_tickets, name='mis-tickets'),
     path('crear/', crear_ticket, name='crear-ticket'),
     path('<int:id_ticket>/', obtener_ticket, name='obtener-ticket'),
     path('<int:id_ticket>/actualizar/', actualizar_ticket, name='actualizar-ticket'),

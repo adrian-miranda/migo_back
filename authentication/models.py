@@ -26,16 +26,16 @@ class Cargos(models.Model):
     Modelo para la tabla cargos
     """
     id_cargos = models.AutoField(primary_key=True)
-    nombre_cargo = models.CharField(max_length=45, unique=True)
-
+    nombre_cargo = models.CharField(max_length=45)
+    peso_prioridad = models.IntegerField(default=2)  # ← AGREGAR ESTA LÍNEA
+    
     class Meta:
         managed = False
         db_table = 'cargos'
-        ordering = ['id_cargos']
-
+        ordering = ['nombre_cargo']
+    
     def __str__(self):
         return self.nombre_cargo
-
 
 class Personas(models.Model):
     """
