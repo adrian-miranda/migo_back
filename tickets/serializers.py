@@ -2,14 +2,15 @@
 Serializers para el sistema de tickets
 """
 from rest_framework import serializers
+from authentication.serializers import UsuarioSerializer, UsuarioBasicoSerializer
 from .models import (
     CategoriaTicket, 
     EstadoTicket, 
     PrioridadTicket, 
     Ticket, 
-    HistorialTicket
+    HistorialTicket,
+    CalificacionTicket
 )
-from authentication.serializers import UsuarioSerializer, UsuarioBasicoSerializer
 
 
 class CategoriaTicketSerializer(serializers.ModelSerializer):
@@ -105,6 +106,7 @@ class TicketDetailSerializer(serializers.ModelSerializer):
     prioridad_nivel = serializers.IntegerField(source='prioridad_id.nivel', read_only=True)
     usuario_creador = serializers.SerializerMethodField()
     tecnico_asignado = serializers.SerializerMethodField()
+    calificacion_ticket = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -113,7 +115,8 @@ class TicketDetailSerializer(serializers.ModelSerializer):
             'fecha_creacion', 'fecha_asignacion', 'fecha_resolucion', 'fecha_cierre',
             'solucion', 'categoria', 'estado', 'estado_color',
             'prioridad', 'prioridad_color', 'prioridad_nivel',
-            'usuario_creador', 'tecnico_asignado', 'prioridad_manual'
+            'usuario_creador', 'tecnico_asignado', 'prioridad_manual',
+            'calificacion_ticket'
         ]
     
     def get_usuario_creador(self, obj):
@@ -133,6 +136,13 @@ class TicketDetailSerializer(serializers.ModelSerializer):
                 'correo': obj.tecnico_asignado_id.correo
             }
         return None
+    
+    def get_calificacion_ticket(self, obj):
+        try:
+            calificacion = obj.calificacion
+            return CalificacionTicketSerializer(calificacion).data
+        except CalificacionTicket.DoesNotExist:
+            return None
 
 
 class TicketCreateSerializer(serializers.ModelSerializer):
@@ -195,3 +205,35 @@ class HistorialTicketSerializer(serializers.ModelSerializer):
             'id': obj.usuario_id.id_usuarios,
             'nombre': obj.usuario_id.personas_id_personas.nombre_completo
         }
+
+class CalificacionTicketSerializer(serializers.ModelSerializer):
+    """Serializer para calificaciones de tickets"""
+    usuario = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CalificacionTicket
+        fields = [
+            'id_calificacion',
+            'calificacion',
+            'comentario',
+            'fecha_calificacion',
+            'usuario'
+        ]
+    
+    def get_usuario(self, obj):
+        return {
+            'id': obj.usuario_id.id_usuarios,
+            'nombre': obj.usuario_id.personas_id_personas.nombre_completo
+        }
+
+
+class CalificacionCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear calificaciones"""
+    class Meta:
+        model = CalificacionTicket
+        fields = ['calificacion', 'comentario']
+    
+    def validate_calificacion(self, value):
+        if not 1 <= value <= 5:
+            raise serializers.ValidationError("La calificación debe estar entre 1 y 5")
+        return value

@@ -3,6 +3,7 @@ Modelos para el sistema de tickets
 """
 from django.db import models
 from authentication.models import Usuarios
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class CategoriaTicket(models.Model):
@@ -180,3 +181,33 @@ class HistorialTicket(models.Model):
 
     def __str__(self):
         return f"Historial #{self.id_historial} - Ticket #{self.ticket_id.id_ticket}"
+    
+class CalificacionTicket(models.Model):
+    """
+    Modelo para calificaciones de tickets
+    """
+    id_calificacion = models.AutoField(primary_key=True)
+    ticket_id = models.OneToOneField(
+        Ticket,
+        on_delete=models.CASCADE,
+        db_column='ticket_id_ticket',
+        related_name='calificacion'
+    )
+    usuario_id = models.ForeignKey(
+        'authentication.Usuarios',
+        on_delete=models.CASCADE,
+        db_column='usuario_id_usuarios'
+    )
+    calificacion = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comentario = models.TextField(blank=True, null=True)
+    fecha_calificacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = False
+        db_table = 'calificacion_ticket'
+        ordering = ['-fecha_calificacion']
+
+    def __str__(self):
+        return f"Calificación {self.calificacion}/5 - Ticket #{self.ticket_id.id_ticket}"

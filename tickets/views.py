@@ -14,7 +14,8 @@ from .models import (
     EstadoTicket,
     PrioridadTicket,
     Ticket,
-    HistorialTicket
+    HistorialTicket,
+    CalificacionTicket
 )
 from .serializers import (
     CategoriaTicketSerializer,
@@ -23,8 +24,9 @@ from .serializers import (
     TicketListSerializer,
     TicketDetailSerializer,
     TicketCreateSerializer,
-    TicketUpdateSerializer,
-    HistorialTicketSerializer
+    HistorialTicketSerializer,
+    CalificacionTicketSerializer,
+    CalificacionCreateSerializer
 )
 from authentication.models import Usuarios
 
@@ -752,6 +754,149 @@ def tickets_pendientes(request):
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def calificar_ticket(request, id_ticket):
+    """
+    Calificar un ticket cerrado
+    """
+    try:
+        ticket = Ticket.objects.get(id_ticket=id_ticket)
+        user_id = request.data.get('usuario_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'usuario_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar que el ticket esté CERRADO
+        if ticket.estado_id.id_estado_ticket != 4:
+            return Response({
+                'success': False,
+                'error': 'Solo se pueden calificar tickets cerrados'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar que sea el usuario creador
+        if ticket.usuario_creador_id.id_usuarios != int(user_id):
+            return Response({
+                'success': False,
+                'error': 'Solo el creador del ticket puede calificarlo'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Verificar que NO tenga calificación previa
+        if CalificacionTicket.objects.filter(ticket_id=ticket).exists():
+            return Response({
+                'success': False,
+                'error': 'Este ticket ya fue calificado'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Crear calificación
+        serializer = CalificacionCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            calificacion = serializer.save(
+                ticket_id=ticket,
+                usuario_id=ticket.usuario_creador_id
+            )
+            
+            response_serializer = CalificacionTicketSerializer(calificacion)
+            
+            return Response({
+                'success': True,
+                'message': 'Calificación registrada exitosamente',
+                'calificacion': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response({
+            'success': False,
+            'error': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Ticket.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Ticket no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def obtener_calificacion(request, id_ticket):
+    """
+    Obtener la calificación de un ticket
+    """
+    try:
+        ticket = Ticket.objects.get(id_ticket=id_ticket)
+        
+        try:
+            calificacion = CalificacionTicket.objects.get(ticket_id=ticket)
+            serializer = CalificacionTicketSerializer(calificacion)
+            
+            return Response({
+                'success': True,
+                'calificacion': serializer.data
+            }, status=status.HTTP_200_OK)
+        except CalificacionTicket.DoesNotExist:
+            return Response({
+                'success': True,
+                'calificacion': None
+            }, status=status.HTTP_200_OK)
+        
+    except Ticket.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Ticket no encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def tickets_sin_calificar(request):
+    """
+    Obtener tickets cerrados sin calificar del usuario
+    """
+    try:
+        user_id = request.GET.get('user_id')
+        
+        if not user_id:
+            return Response({
+                'success': False,
+                'error': 'user_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Tickets cerrados del usuario sin calificación
+        tickets = Ticket.objects.filter(
+            usuario_creador_id=user_id,
+            estado_id=4  # Cerrado
+        ).exclude(
+            id_ticket__in=CalificacionTicket.objects.values_list('ticket_id', flat=True)
+        ).order_by('-fecha_cierre')
+        
+        serializer = TicketListSerializer(tickets, many=True)
+        
+        return Response({
+            'success': True,
+            'tickets': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
         return Response({
             'success': False,
             'error': str(e)
