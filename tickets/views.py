@@ -578,7 +578,7 @@ def obtener_historial_ticket(request, id_ticket):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def estadisticas_tickets(request):
-    """Obtener estadísticas generales de tickets"""
+    """Obtener estadísticas generales de tickets + satisfacción"""
     try:
         total = Ticket.objects.count()
         abiertos = Ticket.objects.filter(estado_id=1).count()
@@ -596,6 +596,27 @@ def estadisticas_tickets(request):
             count = Ticket.objects.filter(categoria_id=categoria.id_categoria_ticket).count()
             por_categoria[categoria.nombre_categoria] = count
         
+        # ESTADÍSTICAS DE SATISFACCIÓN
+        calificaciones = CalificacionTicket.objects.all()
+        total_calificaciones = calificaciones.count()
+        
+        satisfaccion_data = None
+        if total_calificaciones > 0:
+            # Promedio general
+            from django.db.models import Avg
+            promedio = calificaciones.aggregate(Avg('calificacion'))['calificacion__avg']
+            
+            # Distribución por estrellas
+            distribucion = {}
+            for i in range(1, 6):
+                distribucion[str(i)] = calificaciones.filter(calificacion=i).count()
+            
+            satisfaccion_data = {
+                'promedio': round(promedio, 2),
+                'total': total_calificaciones,
+                'distribucion': distribucion
+            }
+        
         return Response({
             'success': True,
             'estadisticas': {
@@ -607,16 +628,18 @@ def estadisticas_tickets(request):
                     'cerrados': cerrados
                 },
                 'por_prioridad': por_prioridad,
-                'por_categoria': por_categoria
+                'por_categoria': por_categoria,
+                'satisfaccion': satisfaccion_data
             }
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
         return Response({
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
 
 
 @api_view(['GET'])
