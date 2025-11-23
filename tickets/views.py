@@ -585,6 +585,7 @@ def estadisticas_tickets(request):
         en_proceso = Ticket.objects.filter(estado_id=2).count()
         resueltos = Ticket.objects.filter(estado_id=3).count()
         cerrados = Ticket.objects.filter(estado_id=4).count()
+        cancelados = Ticket.objects.filter(estado_id=5).count()  # ← AGREGAR
         
         por_prioridad = {}
         for prioridad in PrioridadTicket.objects.all():
@@ -625,7 +626,8 @@ def estadisticas_tickets(request):
                     'abiertos': abiertos,
                     'en_proceso': en_proceso,
                     'resueltos': resueltos,
-                    'cerrados': cerrados
+                    'cerrados': cerrados,
+                    'cancelados': cancelados  # ← AGREGAR
                 },
                 'por_prioridad': por_prioridad,
                 'por_categoria': por_categoria,
