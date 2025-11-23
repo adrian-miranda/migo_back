@@ -14,4 +14,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
     path('api/tickets/', include('tickets.urls')),
+    path('api/ia/', include('ia_service.urls')),
 ]

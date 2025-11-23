@@ -3,6 +3,11 @@ Django settings for migo_back project.
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +36,7 @@ INSTALLED_APPS = [
     # Local apps
     'authentication',
     'tickets',
+    'ia_service',
 ]
 
 MIDDLEWARE = [
@@ -151,3 +157,7 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
     ],
 }
+
+# OpenAI Configuration
+# OpenAI Configuration
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
