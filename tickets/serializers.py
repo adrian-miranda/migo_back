@@ -50,17 +50,15 @@ class PrioridadTicketSerializer(serializers.ModelSerializer):
 
 
 class TicketListSerializer(serializers.ModelSerializer):
-    """Serializer simplificado para listados de tickets"""
     categoria = serializers.CharField(source='categoria_id.nombre_categoria', read_only=True)
     estado = serializers.CharField(source='estado_id.nombre_estado', read_only=True)
     estado_color = serializers.CharField(source='estado_id.color', read_only=True)
     prioridad = serializers.CharField(source='prioridad_id.nombre_prioridad', read_only=True)
     prioridad_color = serializers.CharField(source='prioridad_id.color', read_only=True)
     prioridad_nivel = serializers.IntegerField(source='prioridad_id.nivel', read_only=True)
-    
     usuario_creador = serializers.SerializerMethodField()
     tecnico_asignado = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = Ticket
         fields = [
@@ -69,6 +67,8 @@ class TicketListSerializer(serializers.ModelSerializer):
             'descripcion',
             'fecha_creacion',
             'fecha_asignacion',
+            'fecha_resolucion',
+            'fecha_cierre',
             'categoria',
             'estado',
             'estado_color',
@@ -78,14 +78,16 @@ class TicketListSerializer(serializers.ModelSerializer):
             'usuario_creador',
             'tecnico_asignado'
         ]
-
+    
     def get_usuario_creador(self, obj):
-        return {
-            'id': obj.usuario_creador_id.id_usuarios,
-            'nombre': obj.usuario_creador_id.personas_id_personas.nombre_completo,
-            'correo': obj.usuario_creador_id.correo
-        }
-
+        if obj.usuario_creador_id:
+            return {
+                'id': obj.usuario_creador_id.id_usuarios,
+                'nombre': obj.usuario_creador_id.personas_id_personas.nombre_completo,
+                'correo': obj.usuario_creador_id.correo
+            }
+        return None
+    
     def get_tecnico_asignado(self, obj):
         if obj.tecnico_asignado_id:
             return {
