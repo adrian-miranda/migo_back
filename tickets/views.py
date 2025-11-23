@@ -1002,3 +1002,163 @@ def tickets_sin_calificar(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def estadisticas_historicas(request):
+    """
+    Obtener estadísticas históricas basadas en el historial de tickets
+    Parámetros opcionales:
+    - fecha_inicio: YYYY-MM-DD (default: primer día del mes actual)
+    - fecha_fin: YYYY-MM-DD (default: hoy)
+    """
+    try:
+        from datetime import datetime, timedelta
+        from django.db.models import Count, Avg, Q
+        
+        # Obtener parámetros de fecha
+        fecha_inicio_param = request.GET.get('fecha_inicio')
+        fecha_fin_param = request.GET.get('fecha_fin')
+        
+        # Si no hay parámetros, usar mes actual por defecto
+        if not fecha_inicio_param or not fecha_fin_param:
+            hoy = timezone.now()
+            fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
+        else:
+            # Parsear fechas proporcionadas
+            fecha_inicio = datetime.strptime(fecha_inicio_param, '%Y-%m-%d')
+            fecha_fin = datetime.strptime(fecha_fin_param, '%Y-%m-%d')
+            
+            # Asegurar que tengan timezone
+            if timezone.is_naive(fecha_inicio):
+                fecha_inicio = timezone.make_aware(fecha_inicio)
+            if timezone.is_naive(fecha_fin):
+                fecha_fin = timezone.make_aware(fecha_fin)
+            
+            # Ajustar fecha_fin al final del día
+            fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59, microsecond=999999)
+        
+        # ESTADÍSTICAS POR ESTADO (basadas en historial)
+        # Contar tickets que PASARON a cada estado en el período
+        
+        # Tickets que pasaron a "Abierto" (creados)
+        abiertos = HistorialTicket.objects.filter(
+            estado_nuevo_id=1,
+            fecha_cambio__range=[fecha_inicio, fecha_fin]
+        ).values('ticket_id').distinct().count()
+        
+        # Tickets que pasaron a "En Proceso"
+        en_proceso = HistorialTicket.objects.filter(
+            estado_nuevo_id=2,
+            fecha_cambio__range=[fecha_inicio, fecha_fin]
+        ).values('ticket_id').distinct().count()
+        
+        # Tickets que pasaron a "Resuelto"
+        resueltos = HistorialTicket.objects.filter(
+            estado_nuevo_id=3,
+            fecha_cambio__range=[fecha_inicio, fecha_fin]
+        ).values('ticket_id').distinct().count()
+        
+        # Tickets que pasaron a "Cerrado"
+        cerrados = HistorialTicket.objects.filter(
+            estado_nuevo_id=4,
+            fecha_cambio__range=[fecha_inicio, fecha_fin]
+        ).values('ticket_id').distinct().count()
+        
+        # Tickets que pasaron a "Cancelado"
+        cancelados = HistorialTicket.objects.filter(
+            estado_nuevo_id=5,
+            fecha_cambio__range=[fecha_inicio, fecha_fin]
+        ).values('ticket_id').distinct().count()
+        
+        # ESTADÍSTICAS POR PRIORIDAD (tickets creados en el período)
+        tickets_creados = Ticket.objects.filter(
+            fecha_creacion__range=[fecha_inicio, fecha_fin]
+        )
+        
+        por_prioridad = {}
+        for prioridad in PrioridadTicket.objects.all():
+            count = tickets_creados.filter(prioridad_id=prioridad.id_prioridad_ticket).count()
+            por_prioridad[prioridad.nombre_prioridad] = count
+        
+        # ESTADÍSTICAS POR CATEGORÍA (tickets creados en el período)
+        por_categoria = {}
+        for categoria in CategoriaTicket.objects.all():
+            count = tickets_creados.filter(categoria_id=categoria.id_categoria_ticket).count()
+            por_categoria[categoria.nombre_categoria] = count
+        
+        # ESTADÍSTICAS DE SATISFACCIÓN (calificaciones en el período)
+        calificaciones = CalificacionTicket.objects.filter(
+            fecha_calificacion__range=[fecha_inicio, fecha_fin]
+        )
+        total_calificaciones = calificaciones.count()
+        
+        satisfaccion_data = None
+        if total_calificaciones > 0:
+            promedio = calificaciones.aggregate(Avg('calificacion'))['calificacion__avg']
+            
+            distribucion = {}
+            for i in range(1, 6):
+                distribucion[str(i)] = calificaciones.filter(calificacion=i).count()
+            
+            satisfaccion_data = {
+                'promedio': round(promedio, 2),
+                'total': total_calificaciones,
+                'distribucion': distribucion
+            }
+        
+        # MÉTRICAS ADICIONALES
+        # Calcular total de tickets con actividad en el período
+        tickets_con_actividad = set()
+        for estado_id in [1, 2, 3, 4, 5]:
+            tickets_estado = HistorialTicket.objects.filter(
+                estado_nuevo_id=estado_id,
+                fecha_cambio__range=[fecha_inicio, fecha_fin]
+            ).values_list('ticket_id', flat=True)
+            tickets_con_actividad.update(tickets_estado)
+        
+        total_actividad = len(tickets_con_actividad)
+        total_tickets_periodo = abiertos  # Total de tickets creados en el período
+        
+        # Tasas basadas en tickets con actividad
+        tasa_resolucion = round((resueltos / total_actividad * 100), 1) if total_actividad > 0 else 0
+        tasa_cierre = round((cerrados / total_actividad * 100), 1) if total_actividad > 0 else 0
+        tasa_cancelacion = round((cancelados / total_actividad * 100), 1) if total_actividad > 0 else 0
+        tasa_calificacion = round((total_calificaciones / cerrados * 100), 1) if cerrados > 0 else 0
+        
+        return Response({
+            'success': True,
+            'periodo': {
+                'fecha_inicio': fecha_inicio.strftime('%Y-%m-%d'),
+                'fecha_fin': fecha_fin.strftime('%Y-%m-%d')
+            },
+            'estadisticas': {
+                'total': total_tickets_periodo,
+                'total_actividad': total_actividad,
+                'por_estado': {
+                    'abiertos': abiertos,
+                    'en_proceso': en_proceso,
+                    'resueltos': resueltos,
+                    'cerrados': cerrados,
+                    'cancelados': cancelados
+                },
+                'por_prioridad': por_prioridad,
+                'por_categoria': por_categoria,
+                'satisfaccion': satisfaccion_data,
+                'metricas': {
+                    'tasa_resolucion': tasa_resolucion,
+                    'tasa_cierre': tasa_cierre,
+                    'tasa_cancelacion': tasa_cancelacion,
+                    'tasa_calificacion': tasa_calificacion
+                }
+            }
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

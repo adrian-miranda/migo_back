@@ -20,6 +20,7 @@ from .views import (
     obtener_historial_ticket,
     # Estadísticas
     estadisticas_tickets,
+    estadisticas_historicas,
     # Calificaciones
     calificar_ticket,
     obtener_calificacion,
@@ -54,4 +55,6 @@ urlpatterns = [
     
     # Estadísticas
     path('estadisticas/', estadisticas_tickets, name='estadisticas-tickets'),
+    path('estadisticas-historicas/', estadisticas_historicas, name='estadisticas-historicas'),
+
 ]
