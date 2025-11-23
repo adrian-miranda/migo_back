@@ -400,11 +400,22 @@ def actualizar_ticket(request, id_ticket):
     try:
         ticket = Ticket.objects.get(id_ticket=id_ticket)
         
+        # ❌ BLOQUEO: No se puede modificar un ticket cerrado
+        if ticket.estado_id.id_estado_ticket == 4:
+            return Response({
+                'success': False,
+                'error': 'No se puede modificar un ticket cerrado'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # Guardar estado anterior para historial
         estado_anterior = ticket.estado_id
         
-        # Procesar datos del request
-        data_to_update = {}
+        # ❌ BLOQUEO: No se puede establecer manualmente el estado "Cerrado"
+        if 'estado_id' in request.data and int(request.data['estado_id']) == 4:
+            return Response({
+                'success': False,
+                'error': 'El estado "Cerrado" solo se establece automáticamente después de calificar'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         # Asignar técnico
         if 'tecnico_asignado_id' in request.data:
@@ -413,20 +424,40 @@ def actualizar_ticket(request, id_ticket):
                 ticket.tecnico_asignado_id_id = tecnico_id
                 if not ticket.fecha_asignacion:
                     ticket.fecha_asignacion = timezone.now()
-                    ticket.estado_id_id = 2  # En Proceso
+                    # Si está en Abierto, cambiar a En Proceso automáticamente
+                    if ticket.estado_id.id_estado_ticket == 1:
+                        ticket.estado_id_id = 2  # En Proceso
             else:
                 ticket.tecnico_asignado_id = None
         
         # Cambiar estado
         if 'estado_id' in request.data:
-            nuevo_estado_id = request.data['estado_id']
+            nuevo_estado_id = int(request.data['estado_id'])
+            
+            # Validar que si cambia a Resuelto (3), debe tener solución
+            if nuevo_estado_id == 3:
+                solucion = request.data.get('solucion', ticket.solucion)
+                if not solucion or len(solucion.strip()) < 10:
+                    return Response({
+                        'success': False,
+                        'error': 'Debe ingresar una solución de al menos 10 caracteres para cambiar a "Resuelto"'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # ❌ BLOQUEO: No se puede volver a estados anteriores desde Resuelto
+            if ticket.estado_id.id_estado_ticket == 3 and nuevo_estado_id < 3:
+                return Response({
+                    'success': False,
+                    'error': 'No se puede volver a estados anteriores desde "Resuelto"'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
             ticket.estado_id_id = nuevo_estado_id
             
             # Actualizar fechas según el estado
             if nuevo_estado_id == 3 and not ticket.fecha_resolucion:  # Resuelto
                 ticket.fecha_resolucion = timezone.now()
-            elif nuevo_estado_id == 4 and not ticket.fecha_cierre:  # Cerrado
-                ticket.fecha_cierre = timezone.now()
+            elif nuevo_estado_id == 5:  # Cancelado
+                # No actualizar fecha_cierre para cancelados
+                pass
         
         # Actualizar solución
         if 'solucion' in request.data:
@@ -437,24 +468,34 @@ def actualizar_ticket(request, id_ticket):
         
         # Crear entrada en historial si cambió el estado
         if 'estado_id' in request.data and estado_anterior.id_estado_ticket != ticket.estado_id.id_estado_ticket:
+            comentario_historial = f'Estado cambiado de "{estado_anterior.nombre_estado}" a "{ticket.estado_id.nombre_estado}"'
+            
+            # Si se canceló, agregar mensaje especial
+            if ticket.estado_id.id_estado_ticket == 5:
+                motivo_cancelacion = request.data.get('motivo_cancelacion', 'Sin motivo especificado')
+                comentario_historial = f'Ticket cancelado. Motivo: {motivo_cancelacion}'
+            
             HistorialTicket.objects.create(
                 ticket_id=ticket,
                 usuario_id=ticket.usuario_creador_id,
                 estado_anterior_id=estado_anterior,
                 estado_nuevo_id=ticket.estado_id,
-                comentario=f'Estado cambiado de "{estado_anterior.nombre_estado}" a "{ticket.estado_id.nombre_estado}"'
+                comentario=comentario_historial
             )
         
-        # Crear historial si se asignó técnico
-        if 'tecnico_asignado_id' in request.data and request.data['tecnico_asignado_id']:
-            tecnico = Usuarios.objects.get(id_usuarios=request.data['tecnico_asignado_id'])
-            HistorialTicket.objects.create(
-                ticket_id=ticket,
-                usuario_id=ticket.usuario_creador_id,
-                estado_anterior_id=estado_anterior,
-                estado_nuevo_id=ticket.estado_id,
-                comentario=f'Ticket asignado a {tecnico.personas_id_personas.nombre_completo}'
-            )
+        # Crear historial si se asignó técnico por primera vez
+        if 'tecnico_asignado_id' in request.data and request.data['tecnico_asignado_id'] and not estado_anterior.id_estado_ticket == ticket.estado_id.id_estado_ticket:
+            try:
+                tecnico = Usuarios.objects.get(id_usuarios=request.data['tecnico_asignado_id'])
+                HistorialTicket.objects.create(
+                    ticket_id=ticket,
+                    usuario_id=ticket.usuario_creador_id,
+                    estado_anterior_id=estado_anterior,
+                    estado_nuevo_id=ticket.estado_id,
+                    comentario=f'Ticket asignado a {tecnico.personas_id_personas.nombre_completo}'
+                )
+            except:
+                pass
         
         # Serializar respuesta
         response_serializer = TicketDetailSerializer(ticket)
@@ -787,7 +828,7 @@ def tickets_pendientes(request):
 @permission_classes([AllowAny])
 def calificar_ticket(request, id_ticket):
     """
-    Calificar un ticket cerrado
+    Calificar un ticket resuelto (cambia automáticamente a Cerrado)
     """
     try:
         ticket = Ticket.objects.get(id_ticket=id_ticket)
@@ -799,11 +840,11 @@ def calificar_ticket(request, id_ticket):
                 'error': 'usuario_id es requerido'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Verificar que el ticket esté CERRADO
-        if ticket.estado_id.id_estado_ticket != 4:
+        # Verificar que el ticket esté RESUELTO
+        if ticket.estado_id.id_estado_ticket != 3:
             return Response({
                 'success': False,
-                'error': 'Solo se pueden calificar tickets cerrados'
+                'error': 'Solo se pueden calificar tickets en estado "Resuelto"'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Verificar que sea el usuario creador
@@ -828,11 +869,26 @@ def calificar_ticket(request, id_ticket):
                 usuario_id=ticket.usuario_creador_id
             )
             
+            # ✅ CAMBIAR AUTOMÁTICAMENTE A CERRADO
+            estado_anterior = ticket.estado_id
+            ticket.estado_id_id = 4  # Cerrado
+            ticket.fecha_cierre = timezone.now()
+            ticket.save()
+            
+            # Registrar en historial
+            HistorialTicket.objects.create(
+                ticket_id=ticket,
+                usuario_id=ticket.usuario_creador_id,
+                estado_anterior_id=estado_anterior,
+                estado_nuevo_id_id=4,
+                comentario=f'Ticket cerrado automáticamente después de calificación ({calificacion.calificacion}/5 estrellas)'
+            )
+            
             response_serializer = CalificacionTicketSerializer(calificacion)
             
             return Response({
                 'success': True,
-                'message': 'Calificación registrada exitosamente',
+                'message': 'Calificación registrada exitosamente. El ticket ha sido cerrado.',
                 'calificacion': response_serializer.data
             }, status=status.HTTP_201_CREATED)
         
@@ -853,7 +909,6 @@ def calificar_ticket(request, id_ticket):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @csrf_exempt
 @api_view(['GET'])
@@ -891,7 +946,7 @@ def obtener_calificacion(request, id_ticket):
 @permission_classes([AllowAny])
 def tickets_sin_calificar(request):
     """
-    Obtener tickets cerrados sin calificar del usuario
+    Obtener tickets resueltos sin calificar del usuario
     """
     try:
         user_id = request.GET.get('user_id')
@@ -902,13 +957,13 @@ def tickets_sin_calificar(request):
                 'error': 'user_id es requerido'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Tickets cerrados del usuario sin calificación
+        # Tickets RESUELTOS del usuario sin calificación
         tickets = Ticket.objects.filter(
             usuario_creador_id=user_id,
-            estado_id=4  # Cerrado
+            estado_id=3  # Resuelto (no Cerrado)
         ).exclude(
             id_ticket__in=CalificacionTicket.objects.values_list('ticket_id', flat=True)
-        ).order_by('-fecha_cierre')
+        ).order_by('-fecha_resolucion')
         
         serializer = TicketListSerializer(tickets, many=True)
         
