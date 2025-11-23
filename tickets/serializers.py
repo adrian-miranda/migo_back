@@ -99,11 +99,17 @@ class TicketListSerializer(serializers.ModelSerializer):
 class TicketDetailSerializer(serializers.ModelSerializer):
     """Serializer completo para detalle de ticket"""
     categoria = serializers.CharField(source='categoria_id.nombre_categoria', read_only=True)
+    categoria_id_value = serializers.IntegerField(source='categoria_id.id_categoria_ticket', read_only=True)
+    
     estado = serializers.CharField(source='estado_id.nombre_estado', read_only=True)
+    estado_id_value = serializers.IntegerField(source='estado_id.id_estado_ticket', read_only=True)
     estado_color = serializers.CharField(source='estado_id.color', read_only=True)
+    
     prioridad = serializers.CharField(source='prioridad_id.nombre_prioridad', read_only=True)
+    prioridad_id_value = serializers.IntegerField(source='prioridad_id.id_prioridad_ticket', read_only=True)
     prioridad_color = serializers.CharField(source='prioridad_id.color', read_only=True)
     prioridad_nivel = serializers.IntegerField(source='prioridad_id.nivel', read_only=True)
+    
     usuario_creador = serializers.SerializerMethodField()
     tecnico_asignado = serializers.SerializerMethodField()
     calificacion_ticket = serializers.SerializerMethodField()
@@ -113,8 +119,10 @@ class TicketDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id_ticket', 'titulo', 'descripcion',
             'fecha_creacion', 'fecha_asignacion', 'fecha_resolucion', 'fecha_cierre',
-            'solucion', 'categoria', 'estado', 'estado_color',
-            'prioridad', 'prioridad_color', 'prioridad_nivel',
+            'solucion', 
+            'categoria', 'categoria_id_value',
+            'estado', 'estado_id_value', 'estado_color',
+            'prioridad', 'prioridad_id_value', 'prioridad_color', 'prioridad_nivel',
             'usuario_creador', 'tecnico_asignado', 'prioridad_manual',
             'calificacion_ticket'
         ]

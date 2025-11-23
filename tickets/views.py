@@ -403,40 +403,61 @@ def actualizar_ticket(request, id_ticket):
         # Guardar estado anterior para historial
         estado_anterior = ticket.estado_id
         
-        serializer = TicketUpdateSerializer(ticket, data=request.data, partial=True)
+        # Procesar datos del request
+        data_to_update = {}
         
-        if not serializer.is_valid():
-            return Response({
-                'success': False,
-                'error': 'Datos inválidos',
-                'details': serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # Asignar técnico
+        if 'tecnico_asignado_id' in request.data:
+            tecnico_id = request.data['tecnico_asignado_id']
+            if tecnico_id:
+                ticket.tecnico_asignado_id_id = tecnico_id
+                if not ticket.fecha_asignacion:
+                    ticket.fecha_asignacion = timezone.now()
+                    ticket.estado_id_id = 2  # En Proceso
+            else:
+                ticket.tecnico_asignado_id = None
         
-        # Actualizar fechas según cambios
-        if 'tecnico_asignado_id' in request.data and not ticket.fecha_asignacion:
-            serializer.validated_data['fecha_asignacion'] = timezone.now()
-            serializer.validated_data['estado_id_id'] = 2  # En Proceso
-        
+        # Cambiar estado
         if 'estado_id' in request.data:
-            nuevo_estado = request.data['estado_id']
-            if nuevo_estado == 3 and not ticket.fecha_resolucion:  # Resuelto
-                serializer.validated_data['fecha_resolucion'] = timezone.now()
-            elif nuevo_estado == 4 and not ticket.fecha_cierre:  # Cerrado
-                serializer.validated_data['fecha_cierre'] = timezone.now()
+            nuevo_estado_id = request.data['estado_id']
+            ticket.estado_id_id = nuevo_estado_id
+            
+            # Actualizar fechas según el estado
+            if nuevo_estado_id == 3 and not ticket.fecha_resolucion:  # Resuelto
+                ticket.fecha_resolucion = timezone.now()
+            elif nuevo_estado_id == 4 and not ticket.fecha_cierre:  # Cerrado
+                ticket.fecha_cierre = timezone.now()
         
-        ticket_actualizado = serializer.save()
+        # Actualizar solución
+        if 'solucion' in request.data:
+            ticket.solucion = request.data['solucion']
+        
+        # Guardar cambios
+        ticket.save()
         
         # Crear entrada en historial si cambió el estado
-        if estado_anterior.id_estado_ticket != ticket_actualizado.estado_id.id_estado_ticket:
+        if 'estado_id' in request.data and estado_anterior.id_estado_ticket != ticket.estado_id.id_estado_ticket:
             HistorialTicket.objects.create(
-                ticket_id=ticket_actualizado,
-                usuario_id=ticket_actualizado.usuario_creador_id,  # TODO: usar usuario del token
+                ticket_id=ticket,
+                usuario_id=ticket.usuario_creador_id,
                 estado_anterior_id=estado_anterior,
-                estado_nuevo_id=ticket_actualizado.estado_id,
-                comentario=f'Estado cambiado de "{estado_anterior.nombre_estado}" a "{ticket_actualizado.estado_id.nombre_estado}"'
+                estado_nuevo_id=ticket.estado_id,
+                comentario=f'Estado cambiado de "{estado_anterior.nombre_estado}" a "{ticket.estado_id.nombre_estado}"'
             )
         
-        response_serializer = TicketDetailSerializer(ticket_actualizado)
+        # Crear historial si se asignó técnico
+        if 'tecnico_asignado_id' in request.data and request.data['tecnico_asignado_id']:
+            tecnico = Usuarios.objects.get(id_usuarios=request.data['tecnico_asignado_id'])
+            HistorialTicket.objects.create(
+                ticket_id=ticket,
+                usuario_id=ticket.usuario_creador_id,
+                estado_anterior_id=estado_anterior,
+                estado_nuevo_id=ticket.estado_id,
+                comentario=f'Ticket asignado a {tecnico.personas_id_personas.nombre_completo}'
+            )
+        
+        # Serializar respuesta
+        response_serializer = TicketDetailSerializer(ticket)
         
         return Response({
             'success': True,
@@ -450,6 +471,8 @@ def actualizar_ticket(request, id_ticket):
             'error': 'Ticket no encontrado'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        import traceback
+        print("Error completo:", traceback.format_exc())
         return Response({
             'success': False,
             'error': str(e)
