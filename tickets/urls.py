@@ -25,6 +25,11 @@ from .views import (
     calificar_ticket,
     obtener_calificacion,
     tickets_sin_calificar,
+    #tecnicos
+    tecnico_estadisticas,
+    tecnico_mis_tickets,
+    tecnico_historial,
+    tecnico_alertas,
 )
 
 app_name = 'tickets'
@@ -56,5 +61,11 @@ urlpatterns = [
     # Estadísticas
     path('estadisticas/', estadisticas_tickets, name='estadisticas-tickets'),
     path('estadisticas-historicas/', estadisticas_historicas, name='estadisticas-historicas'),
+
+    # Endpoints para Técnicos
+    path('tecnico/estadisticas/', tecnico_estadisticas, name='tecnico-estadisticas'),
+    path('tecnico/mis-tickets/', tecnico_mis_tickets, name='tecnico-mis-tickets'),
+    path('tecnico/historial/', tecnico_historial, name='tecnico-historial'),
+    path('tecnico/alertas/', tecnico_alertas, name='tecnico-alertas'),
 
 ]
