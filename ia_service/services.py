@@ -395,94 +395,108 @@ Responde con:
 
 class DetectorPatronesService(OpenAIService):
     """
-    Servicio para detectar patrones en tickets (para administrador)
+    Servicio para detectar patrones y tendencias en tickets
     """
     
-    def analizar_patrones(self, usuario_id: int, dias: int = 30) -> dict:
-        fecha_inicio = timezone.now() - timedelta(days=dias)
-        stats = self._obtener_estadisticas(fecha_inicio)
-        prompt = self._construir_prompt_patrones(stats, dias)
+    def analizar_patrones(self, dias: int, usuario_id: int, categoria: str = None, prioridad: str = None) -> dict:
+        estadisticas = self._obtener_estadisticas(dias, categoria, prioridad)
+        prompt = self._construir_prompt_patrones(estadisticas, dias, categoria, prioridad)
         
         resultado = self._hacer_consulta(
             prompt=prompt,
             usuario_id=usuario_id,
-            tipo_consulta='detectar_patron',
-            ticket_id=None
+            tipo_consulta='analizar_patrones'
         )
         
         if resultado['success']:
-            resultado['estadisticas'] = stats
+            resultado['estadisticas'] = estadisticas
+            resultado['filtros'] = {
+                'dias': dias,
+                'categoria': categoria,
+                'prioridad': prioridad
+            }
         
         return resultado
     
-    def _obtener_estadisticas(self, fecha_inicio) -> dict:
+    def _obtener_estadisticas(self, dias: int, categoria: str = None, prioridad: str = None) -> dict:
+        from datetime import timedelta
+        fecha_inicio = timezone.now() - timedelta(days=dias)
+        
         tickets = Ticket.objects.filter(fecha_creacion__gte=fecha_inicio)
         
-        por_categoria = list(tickets.values(
-            'categoria_id__nombre_categoria'
-        ).annotate(
-            total=Count('id_ticket')
-        ).order_by('-total'))
+        # Aplicar filtro de categoría
+        if categoria:
+            tickets = tickets.filter(categoria_id__nombre_categoria=categoria)
         
-        por_estado = list(tickets.values(
-            'estado_id__nombre_estado'
-        ).annotate(
-            total=Count('id_ticket')
-        ))
+        # Aplicar filtro de prioridad
+        if prioridad:
+            tickets = tickets.filter(prioridad_id__nombre_prioridad=prioridad)
         
-        por_prioridad = list(tickets.values(
-            'prioridad_id__nombre_prioridad'
-        ).annotate(
-            total=Count('id_ticket')
-        ))
+        total = tickets.count()
         
+        por_categoria = tickets.values('categoria_id__nombre_categoria').annotate(
+            count=Count('id_ticket')
+        )
+        
+        por_estado = tickets.values('estado_id__nombre_estado').annotate(
+            count=Count('id_ticket')
+        )
+        
+        por_prioridad = tickets.values('prioridad_id__nombre_prioridad').annotate(
+            count=Count('id_ticket')
+        )
+        
+        resueltos = tickets.filter(estado_id__in=[3, 4]).count()
         sin_resolver = tickets.filter(estado_id__in=[1, 2]).count()
         
         return {
-            'total_tickets': tickets.count(),
-            'por_categoria': por_categoria,
-            'por_estado': por_estado,
-            'por_prioridad': por_prioridad,
+            'total_tickets': total,
+            'resueltos': resueltos,
             'sin_resolver': sin_resolver,
-            'tasa_resolucion': round((tickets.count() - sin_resolver) / max(tickets.count(), 1) * 100, 2)
+            'tasa_resolucion': round((resueltos / total * 100), 2) if total > 0 else 0,
+            'por_categoria': {item['categoria_id__nombre_categoria']: item['count'] for item in por_categoria},
+            'por_estado': {item['estado_id__nombre_estado']: item['count'] for item in por_estado},
+            'por_prioridad': {item['prioridad_id__nombre_prioridad']: item['count'] for item in por_prioridad}
         }
     
-    def _construir_prompt_patrones(self, stats: dict, dias: int) -> str:
+    def _construir_prompt_patrones(self, estadisticas: dict, dias: int, categoria: str = None, prioridad: str = None) -> str:
+        filtros_texto = f"últimos {dias} días"
+        if categoria:
+            filtros_texto += f", categoría: {categoria}"
+        if prioridad:
+            filtros_texto += f", prioridad: {prioridad}"
+        
         prompt = f"""
-ESTADÍSTICAS DE TICKETS (ÚLTIMOS {dias} DÍAS):
+ANÁLISIS DE TICKETS ({filtros_texto}):
 
-Total de tickets: {stats['total_tickets']}
-Tickets sin resolver: {stats['sin_resolver']}
-Tasa de resolución: {stats['tasa_resolucion']}%
+ESTADÍSTICAS GENERALES:
+- Total de tickets: {estadisticas['total_tickets']}
+- Resueltos: {estadisticas['resueltos']}
+- Sin resolver: {estadisticas['sin_resolver']}
+- Tasa de resolución: {estadisticas['tasa_resolucion']}%
 
 POR CATEGORÍA:
-"""
-        for cat in stats['por_categoria']:
-            prompt += f"- {cat['categoria_id__nombre_categoria']}: {cat['total']} tickets\n"
-        
-        prompt += "\nPOR ESTADO:\n"
-        for est in stats['por_estado']:
-            prompt += f"- {est['estado_id__nombre_estado']}: {est['total']} tickets\n"
-        
-        prompt += "\nPOR PRIORIDAD:\n"
-        for pri in stats['por_prioridad']:
-            prompt += f"- {pri['prioridad_id__nombre_prioridad']}: {pri['total']} tickets\n"
-        
-        prompt += """
+{estadisticas['por_categoria']}
+
+POR ESTADO:
+{estadisticas['por_estado']}
+
+POR PRIORIDAD:
+{estadisticas['por_prioridad']}
+
 INSTRUCCIONES:
-Analiza estas estadísticas y proporciona:
+Analiza estos datos y proporciona:
 
-1. **PATRONES DETECTADOS**: ¿Qué tendencias o patrones observas?
+1. **PATRONES DETECTADOS**: ¿Qué tendencias o patrones observas en los datos?
 
-2. **ÁREAS DE PREOCUPACIÓN**: ¿Hay categorías o situaciones que requieran atención?
+2. **ÁREAS DE PREOCUPACIÓN**: ¿Hay categorías o prioridades con problemas evidentes?
 
-3. **RECOMENDACIONES**: Sugerencias para mejorar el servicio de soporte.
+3. **RECOMENDACIONES**: ¿Qué acciones sugieres para mejorar la gestión de tickets?
 
-4. **CAPACITACIÓN SUGERIDA**: ¿En qué áreas deberían capacitarse los técnicos?
+4. **PREDICCIÓN**: Basándote en los datos, ¿qué podría pasar si no se toman medidas?
 
-Sé específico y orientado a la acción en tus recomendaciones.
+Sé específico y basa tus conclusiones en los números proporcionados.
 """
-        
         return prompt
 
 

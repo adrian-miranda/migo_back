@@ -213,7 +213,7 @@ class RecomendarTecnicoView(AuthMixin, APIView):
 
 class AnalizarPatronesView(AuthMixin, APIView):
     """
-    POST: Analiza patrones en tickets
+    POST: Analiza patrones en los tickets
     Requiere: Administrador
     """
     
@@ -222,14 +222,17 @@ class AnalizarPatronesView(AuthMixin, APIView):
         if error:
             return error
         
-        serializer = AnalizarPatronesRequestSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        dias = serializer.validated_data.get('dias', 30)
+        dias = request.data.get('dias', 30)
+        categoria = request.data.get('categoria', '')
+        prioridad = request.data.get('prioridad', '')
         
         service = DetectorPatronesService()
-        resultado = service.analizar_patrones(usuario.id_usuarios, dias)
+        resultado = service.analizar_patrones(
+            dias=dias, 
+            usuario_id=usuario.id_usuarios,
+            categoria=categoria if categoria else None,
+            prioridad=prioridad if prioridad else None
+        )
         
         if resultado['success']:
             return Response(resultado, status=status.HTTP_200_OK)
