@@ -1,5 +1,5 @@
 """
-Django settings for migo_back project.
+Con mucho amor :) Adrian.
 """
 
 from pathlib import Path
