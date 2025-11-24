@@ -427,22 +427,17 @@ class ConsultasRestantesView(AuthMixin, APIView):
             return error
         
         from django.utils import timezone
-        from datetime import timedelta
         
-        # Usar zona horaria de Chile (UTC-3)
-        ahora = timezone.now() - timedelta(hours=3)
-        hoy = ahora.date()
+        # Obtener inicio del día en zona horaria local
+        ahora_local = timezone.localtime(timezone.now())
+        inicio_dia_local = ahora_local.replace(hour=0, minute=0, second=0, microsecond=0)
+        hoy = ahora_local.date()
         
         limite_diario = int(IAConfiguracion.get_valor('limite_diario', '50'))
         
-        # Filtrar por fecha local
-        inicio_dia = timezone.now().replace(hour=3, minute=0, second=0, microsecond=0)
-        if timezone.now().hour < 3:
-            inicio_dia -= timedelta(days=1)
-        
         consultas_hoy = IAConsultasLog.objects.filter(
             usuario_id=usuario.id_usuarios,
-            fecha_consulta__gte=inicio_dia
+            fecha_consulta__gte=inicio_dia_local
         ).count()
         
         restantes = max(0, limite_diario - consultas_hoy)

@@ -40,16 +40,16 @@ class OpenAIService:
         Verifica si el usuario ha excedido el límite diario de consultas
         Retorna (puede_consultar, consultas_restantes)
         """
-        from datetime import timedelta
+        from django.utils import timezone
+        import datetime
         
-        # Usar zona horaria de Chile (UTC-3)
-        inicio_dia = timezone.now().replace(hour=3, minute=0, second=0, microsecond=0)
-        if timezone.now().hour < 3:
-            inicio_dia -= timedelta(days=1)
+        # Obtener inicio del día en zona horaria local
+        ahora_local = timezone.localtime(timezone.now())
+        inicio_dia_local = ahora_local.replace(hour=0, minute=0, second=0, microsecond=0)
         
         consultas_hoy = IAConsultasLog.objects.filter(
             usuario_id=usuario_id,
-            fecha_consulta__gte=inicio_dia
+            fecha_consulta__gte=inicio_dia_local
         ).count()
         
         puede_consultar = consultas_hoy < limite_diario
