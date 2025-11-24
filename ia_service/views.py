@@ -48,9 +48,10 @@ class GuiaSolucionView(AuthMixin, APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         ticket_id = serializer.validated_data['ticket_id']
+        forzar_nueva = request.data.get('forzar_nueva', False)
         
         service = GuiaSolucionService()
-        resultado = service.generar_guia(ticket_id, usuario.id_usuarios)
+        resultado = service.generar_guia(ticket_id, usuario.id_usuarios, usar_cache=not forzar_nueva)
         
         if resultado['success']:
             return Response(resultado, status=status.HTTP_200_OK)
@@ -423,13 +424,22 @@ class ConsultasRestantesView(AuthMixin, APIView):
             return error
         
         from django.utils import timezone
+        from datetime import timedelta
         
-        hoy = timezone.now().date()
+        # Usar zona horaria de Chile (UTC-3)
+        ahora = timezone.now() - timedelta(hours=3)
+        hoy = ahora.date()
+        
         limite_diario = int(IAConfiguracion.get_valor('limite_diario', '50'))
+        
+        # Filtrar por fecha local
+        inicio_dia = timezone.now().replace(hour=3, minute=0, second=0, microsecond=0)
+        if timezone.now().hour < 3:
+            inicio_dia -= timedelta(days=1)
         
         consultas_hoy = IAConsultasLog.objects.filter(
             usuario_id=usuario.id_usuarios,
-            fecha_consulta__date=hoy
+            fecha_consulta__gte=inicio_dia
         ).count()
         
         restantes = max(0, limite_diario - consultas_hoy)

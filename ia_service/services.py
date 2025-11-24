@@ -40,11 +40,16 @@ class OpenAIService:
         Verifica si el usuario ha excedido el límite diario de consultas
         Retorna (puede_consultar, consultas_restantes)
         """
-        hoy = timezone.now().date()
+        from datetime import timedelta
+        
+        # Usar zona horaria de Chile (UTC-3)
+        inicio_dia = timezone.now().replace(hour=3, minute=0, second=0, microsecond=0)
+        if timezone.now().hour < 3:
+            inicio_dia -= timedelta(days=1)
         
         consultas_hoy = IAConsultasLog.objects.filter(
             usuario_id=usuario_id,
-            fecha_consulta__date=hoy
+            fecha_consulta__gte=inicio_dia
         ).count()
         
         puede_consultar = consultas_hoy < limite_diario
@@ -156,7 +161,7 @@ class GuiaSolucionService(OpenAIService):
         
         # Verificar caché
         if usar_cache:
-            cache_result = self._obtener_cache(ticket, 'guia_solucion')
+            cache_result = self._obtener_cache(ticket, 'guia_solucion', usuario_id)
             if cache_result:
                 return cache_result
         
@@ -193,7 +198,7 @@ class GuiaSolucionService(OpenAIService):
         contenido = f"{ticket.titulo}|{ticket.descripcion}|{ticket.categoria_id_id}"
         return hashlib.sha256(contenido.encode()).hexdigest()
     
-    def _obtener_cache(self, ticket, tipo_consulta):
+    def _obtener_cache(self, ticket, tipo_consulta, usuario_id):
         """Obtiene respuesta del caché si existe y es válida"""
         from .models import IACache
         
@@ -210,6 +215,11 @@ class GuiaSolucionService(OpenAIService):
                 import json
                 resultado = json.loads(cache.respuesta_cache)
                 resultado['desde_cache'] = True
+                
+                # Actualizar consultas restantes con valor actual
+                _, restantes = self._verificar_limite(usuario_id)
+                resultado['consultas_restantes'] = restantes
+                
                 return resultado
             else:
                 # Caché expirado, eliminarlo
