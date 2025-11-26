@@ -30,6 +30,13 @@ from .views import (
     tecnico_mis_tickets,
     tecnico_historial,
     tecnico_alertas,
+    #reclamos
+    listar_reclamos, 
+    obtener_reclamo, 
+    crear_reclamo,
+    actualizar_reclamo,
+    estadisticas_reclamos,
+
 )
 
 app_name = 'tickets'
@@ -67,5 +74,12 @@ urlpatterns = [
     path('tecnico/mis-tickets/', tecnico_mis_tickets, name='tecnico-mis-tickets'),
     path('tecnico/historial/', tecnico_historial, name='tecnico-historial'),
     path('tecnico/alertas/', tecnico_alertas, name='tecnico-alertas'),
+
+    # Reclamos
+    path('reclamos/', listar_reclamos, name='listar-reclamos'),
+    path('reclamos/crear/', crear_reclamo, name='crear-reclamo'),
+    path('reclamos/estadisticas/', estadisticas_reclamos, name='estadisticas-reclamos'),
+    path('reclamos/<int:id_reclamo>/', obtener_reclamo, name='obtener-reclamo'),
+    path('reclamos/<int:id_reclamo>/actualizar/', actualizar_reclamo, name='actualizar-reclamo'),
 
 ]

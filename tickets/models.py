@@ -211,3 +211,71 @@ class CalificacionTicket(models.Model):
 
     def __str__(self):
         return f"Calificación {self.calificacion}/5 - Ticket #{self.ticket_id.id_ticket}"
+
+class Reclamo(models.Model):
+    """
+    Modelo para reclamos sobre tickets
+    """
+    CATEGORIA_CHOICES = [
+        ('solucion_ticket', 'Solución del Ticket'),
+        ('comportamiento_tecnico', 'Comportamiento del Técnico'),
+    ]
+    
+    ESTADO_CHOICES = [
+        ('pendiente', 'Pendiente'),
+        ('resuelto', 'Resuelto'),
+    ]
+    
+    PRIORIDAD_CHOICES = [
+        ('baja', 'Baja'),
+        ('media', 'Media'),
+        ('alta', 'Alta'),
+    ]
+    
+    id_reclamo = models.AutoField(primary_key=True)
+    
+    ticket_id = models.ForeignKey(
+        'Ticket',
+        on_delete=models.CASCADE,
+        db_column='ticket_id_ticket',
+        related_name='reclamos'
+    )
+    usuario_id = models.ForeignKey(
+        Usuarios,
+        on_delete=models.CASCADE,
+        db_column='usuario_id_usuarios',
+        related_name='reclamos_realizados'
+    )
+    tecnico_id = models.ForeignKey(
+        Usuarios,
+        on_delete=models.CASCADE,
+        db_column='tecnico_id_usuarios',
+        related_name='reclamos_recibidos'
+    )
+    
+    categoria = models.CharField(max_length=50, choices=CATEGORIA_CHOICES)
+    descripcion = models.TextField()
+    estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='pendiente')
+    prioridad = models.CharField(max_length=20, choices=PRIORIDAD_CHOICES, default='media')
+    
+    respuesta_admin = models.TextField(null=True, blank=True)
+    admin_revisor_id = models.ForeignKey(
+        Usuarios,
+        on_delete=models.SET_NULL,
+        db_column='admin_revisor_id_usuarios',
+        related_name='reclamos_revisados',
+        null=True,
+        blank=True
+    )
+    
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True, null=True, blank=True)
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'reclamos'
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"Reclamo #{self.id_reclamo} - Ticket #{self.ticket_id.id_ticket}"

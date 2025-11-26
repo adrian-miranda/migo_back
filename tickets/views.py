@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import (
     CategoriaTicket,
@@ -15,7 +17,8 @@ from .models import (
     PrioridadTicket,
     Ticket,
     HistorialTicket,
-    CalificacionTicket
+    CalificacionTicket,
+    Reclamo
 )
 from .serializers import (
     CategoriaTicketSerializer,
@@ -26,7 +29,9 @@ from .serializers import (
     TicketCreateSerializer,
     HistorialTicketSerializer,
     CalificacionTicketSerializer,
-    CalificacionCreateSerializer
+    CalificacionCreateSerializer,
+    ReclamoListSerializer,
+    ReclamoDetailSerializer
 )
 from authentication.models import Usuarios
 
@@ -1535,3 +1540,153 @@ def tecnico_alertas(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# ============================================
+# RECLAMOS
+# ============================================
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def listar_reclamos(request):
+    try:
+        reclamos = Reclamo.objects.all()
+        
+        tecnico_id = request.GET.get('tecnico_id')
+        if tecnico_id:
+            reclamos = reclamos.filter(tecnico_id=tecnico_id)
+        
+        usuario_id = request.GET.get('usuario_id')
+        if usuario_id:
+            reclamos = reclamos.filter(usuario_id=usuario_id)
+        
+        estado = request.GET.get('estado')
+        if estado:
+            reclamos = reclamos.filter(estado=estado)
+        
+        serializer = ReclamoListSerializer(reclamos, many=True)
+        
+        return Response({
+            'success': True,
+            'reclamos': serializer.data,
+            'total': reclamos.count()
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def obtener_reclamo(request, id_reclamo):
+    try:
+        reclamo = Reclamo.objects.get(id_reclamo=id_reclamo)
+        serializer = ReclamoDetailSerializer(reclamo)
+        return Response({'success': True, 'reclamo': serializer.data}, status=status.HTTP_200_OK)
+    except Reclamo.DoesNotExist:
+        return Response({'success': False, 'error': 'Reclamo no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def crear_reclamo(request):
+    try:
+        usuario_id = request.data.get('usuario_id')
+        ticket_id = request.data.get('ticket_id')
+        
+        ticket = Ticket.objects.get(id_ticket=ticket_id)
+        
+        if ticket.usuario_creador_id.id_usuarios != int(usuario_id):
+            return Response({'success': False, 'error': 'Solo el creador del ticket puede hacer reclamos'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if ticket.estado_id.id_estado_ticket not in [3, 4]:
+            return Response({'success': False, 'error': 'Solo se pueden crear reclamos para tickets cerrados o resueltos'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not ticket.tecnico_asignado_id:
+            return Response({'success': False, 'error': 'El ticket no tiene técnico asignado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        reclamo = Reclamo.objects.create(
+            ticket_id=ticket,
+            usuario_id=ticket.usuario_creador_id,
+            tecnico_id=ticket.tecnico_asignado_id,
+            categoria=request.data.get('categoria'),
+            descripcion=request.data.get('descripcion'),
+            prioridad=request.data.get('prioridad', 'media')
+        )
+        
+        serializer = ReclamoDetailSerializer(reclamo)
+        return Response({'success': True, 'message': 'Reclamo creado', 'reclamo': serializer.data}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@csrf_exempt
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def actualizar_reclamo(request, id_reclamo):
+    try:
+        reclamo = Reclamo.objects.get(id_reclamo=id_reclamo)
+        admin_id = request.data.get('admin_id')
+        
+        admin = Usuarios.objects.get(id_usuarios=admin_id)
+        if admin.roles_id_roles.id_roles != 3:
+            return Response({'success': False, 'error': 'Solo administradores'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if 'estado' in request.data:
+            reclamo.estado = request.data['estado']
+            if request.data['estado'] == 'resuelto':
+                reclamo.fecha_resolucion = timezone.now()
+        
+        if 'respuesta_admin' in request.data:
+            reclamo.respuesta_admin = request.data['respuesta_admin']
+        
+        reclamo.admin_revisor_id = admin
+        reclamo.save()
+        
+        serializer = ReclamoDetailSerializer(reclamo)
+        return Response({'success': True, 'reclamo': serializer.data}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def estadisticas_reclamos(request):
+    try:
+        total = Reclamo.objects.count()
+        pendientes = Reclamo.objects.filter(estado='pendiente').count()
+        resueltos = Reclamo.objects.filter(estado='resuelto').count()
+        
+        por_categoria = {
+            'solucion_ticket': Reclamo.objects.filter(categoria='solucion_ticket').count(),
+            'comportamiento_tecnico': Reclamo.objects.filter(categoria='comportamiento_tecnico').count(),
+        }
+        
+        por_prioridad = {
+            'baja': Reclamo.objects.filter(prioridad='baja').count(),
+            'media': Reclamo.objects.filter(prioridad='media').count(),
+            'alta': Reclamo.objects.filter(prioridad='alta').count(),
+        }
+        
+        top_tecnicos = Reclamo.objects.values(
+            'tecnico_id__id_usuarios',
+            'tecnico_id__personas_id_personas__primer_nombre',
+            'tecnico_id__personas_id_personas__primer_apellido'
+        ).annotate(total_reclamos=Count('id_reclamo')).order_by('-total_reclamos')[:5]
+        
+        top_list = [{
+            'tecnico_id': t['tecnico_id__id_usuarios'],
+            'nombre': f"{t['tecnico_id__personas_id_personas__primer_nombre']} {t['tecnico_id__personas_id_personas__primer_apellido']}",
+            'total': t['total_reclamos']
+        } for t in top_tecnicos]
+        
+        return Response({
+            'success': True,
+            'estadisticas': {
+                'total': total,
+                'pendientes': pendientes,
+                'resueltos': resueltos,
+                'por_categoria': por_categoria,
+                'por_prioridad': por_prioridad,
+                'top_tecnicos': top_list
+            }
+        }, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

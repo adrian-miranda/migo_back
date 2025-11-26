@@ -9,7 +9,8 @@ from .models import (
     PrioridadTicket, 
     Ticket, 
     HistorialTicket,
-    CalificacionTicket
+    CalificacionTicket,
+    Reclamo
 )
 
 
@@ -247,3 +248,73 @@ class CalificacionCreateSerializer(serializers.ModelSerializer):
         if not 1 <= value <= 5:
             raise serializers.ValidationError("La calificación debe estar entre 1 y 5")
         return value
+
+class ReclamoListSerializer(serializers.ModelSerializer):
+    ticket_titulo = serializers.CharField(source='ticket_id.titulo', read_only=True)
+    ticket_id_value = serializers.IntegerField(source='ticket_id.id_ticket', read_only=True)
+    usuario_nombre = serializers.CharField(source='usuario_id.personas_id_personas.nombre_completo', read_only=True)
+    usuario_correo = serializers.CharField(source='usuario_id.correo', read_only=True)
+    tecnico_nombre = serializers.CharField(source='tecnico_id.personas_id_personas.nombre_completo', read_only=True)
+    tecnico_correo = serializers.CharField(source='tecnico_id.correo', read_only=True)
+    categoria_label = serializers.CharField(source='get_categoria_display', read_only=True)
+    estado_label = serializers.CharField(source='get_estado_display', read_only=True)
+    prioridad_label = serializers.CharField(source='get_prioridad_display', read_only=True)
+    
+    class Meta:
+        model = Reclamo
+        fields = [
+            'id_reclamo', 'ticket_id_value', 'ticket_titulo',
+            'categoria', 'categoria_label', 'estado', 'estado_label',
+            'prioridad', 'prioridad_label', 'usuario_nombre', 'usuario_correo',
+            'tecnico_nombre', 'tecnico_correo', 'fecha_creacion', 'fecha_resolucion', 'descripcion' 
+        ]
+
+
+class ReclamoDetailSerializer(serializers.ModelSerializer):
+    ticket = serializers.SerializerMethodField()
+    usuario = serializers.SerializerMethodField()
+    tecnico = serializers.SerializerMethodField()
+    admin_revisor = serializers.SerializerMethodField()
+    categoria_label = serializers.CharField(source='get_categoria_display', read_only=True)
+    estado_label = serializers.CharField(source='get_estado_display', read_only=True)
+    prioridad_label = serializers.CharField(source='get_prioridad_display', read_only=True)
+    
+    class Meta:
+        model = Reclamo
+        fields = [
+            'id_reclamo', 'ticket', 'usuario', 'tecnico',
+            'categoria', 'categoria_label', 'descripcion',
+            'estado', 'estado_label', 'prioridad', 'prioridad_label',
+            'respuesta_admin', 'admin_revisor',
+            'fecha_creacion', 'fecha_actualizacion', 'fecha_resolucion'
+        ]
+    
+    def get_ticket(self, obj):
+        return {
+            'id': obj.ticket_id.id_ticket,
+            'titulo': obj.ticket_id.titulo,
+            'categoria': obj.ticket_id.categoria_id.nombre_categoria,
+            'estado': obj.ticket_id.estado_id.nombre_estado,
+        }
+    
+    def get_usuario(self, obj):
+        return {
+            'id': obj.usuario_id.id_usuarios,
+            'nombre': obj.usuario_id.personas_id_personas.nombre_completo,
+            'correo': obj.usuario_id.correo,
+        }
+    
+    def get_tecnico(self, obj):
+        return {
+            'id': obj.tecnico_id.id_usuarios,
+            'nombre': obj.tecnico_id.personas_id_personas.nombre_completo,
+            'correo': obj.tecnico_id.correo,
+        }
+    
+    def get_admin_revisor(self, obj):
+        if obj.admin_revisor_id:
+            return {
+                'id': obj.admin_revisor_id.id_usuarios,
+                'nombre': obj.admin_revisor_id.personas_id_personas.nombre_completo,
+            }
+        return None
