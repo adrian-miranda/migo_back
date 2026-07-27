@@ -1,20 +1,24 @@
 # MIGO
 
-> Plataforma SaaS para la gestión inteligente de soporte técnico, desarrollada con React, Django REST Framework e Inteligencia Artificial mediante OpenAI.
+> Plataforma SaaS para la gestión inteligente de soporte técnico, desarrollada con **Django REST Framework**, **React** e **Inteligencia Artificial** mediante **OpenAI**.
 
 ---
 
 ## Descripción
 
-MIGO centraliza la gestión de incidencias de soporte técnico dentro de una organización, permitiendo a usuarios, técnicos y administradores trabajar sobre una misma plataforma.
+MIGO centraliza la gestión de incidencias de soporte técnico dentro de una organización, permitiendo que usuarios, técnicos y administradores trabajen sobre una misma plataforma.
 
 Además de administrar el ciclo completo de los tickets, incorpora Inteligencia Artificial para asistir en la resolución de incidencias, generar métricas de desempeño y apoyar la toma de decisiones mediante análisis operacionales.
+
+📘 **Case Study completo del proyecto**
+
+https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md
 
 ---
 
 ## Características Principales
 
-- Gestión completa de tickets.
+- Gestión completa del ciclo de vida de tickets.
 - Priorización automática de incidencias.
 - Panel independiente para Usuarios, Técnicos y Administradores.
 - Dashboards con indicadores operacionales.
@@ -26,76 +30,123 @@ Además de administrar el ciclo completo de los tickets, incorpora Inteligencia 
 
 ---
 
-## Arquitectura
+# Arquitectura
 
-Frontend
+## Frontend
 
 - React
 - JavaScript
 - Axios
 - React Router DOM
 
-Backend
+Repositorio:
+
+https://github.com/adrian-miranda/migo_front
+
+---
+
+## Backend
 
 - Python
 - Django
 - Django REST Framework
 
-Base de Datos
+Repositorio actual.
+
+---
+
+## Base de Datos
 
 - MySQL
 
-Servicios
+---
+
+## Servicios Integrados
 
 - OpenAI API
 
 ---
 
-## Capturas
+# Documentación
 
-> *(Aquí agregaremos posteriormente las imágenes del sistema.)*
+La documentación técnica completa del proyecto se encuentra en:
+
+📄 **Case Study**
+
+https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md
+
+Incluye:
+
+- Resumen Ejecutivo
+- Visión del Producto
+- Problema
+- Objetivos
+- Arquitectura Funcional
+- Arquitectura Técnica
+- Modelo de Datos
+- Inteligencia Artificial
+- Seguridad
+- Stack Tecnológico
+- Despliegue
+- Roadmap
+- Resultados
+- Aprendizajes
+
+---
+
+# Capturas
+
+> Próximamente se incorporarán capturas reales del sistema.
 
 - Dashboard Administrador
 - Dashboard Técnico
 - Dashboard Usuario
 - Gestión de Tickets
-- Inteligencia Artificial
+- Asistente IA
+- Reportes
+- Analítica
 
 ---
 
-## Documentación
+# Repositorios
 
-La documentación técnica completa se encuentra en:
+## Frontend
 
-📄 `docs/case-study.md`
+https://github.com/adrian-miranda/migo_front
 
-Incluye:
+## Backend
 
-- Arquitectura
-- Modelo de datos
-- Inteligencia Artificial
-- Seguridad
-- Stack tecnológico
-- Roadmap
-- Resultados
-- Conclusiones
+https://github.com/adrian-miranda/migo_back
 
 ---
 
-## Estado del Proyecto
+# Estado del Proyecto
 
-Proyecto funcional desarrollado como plataforma SaaS para soporte técnico empresarial.
+Proyecto funcional desarrollado como plataforma SaaS para la gestión de soporte técnico empresarial.
 
-Actualmente contempla futuras mejoras relacionadas con RAG, clasificación automática de tickets, asignación inteligente de técnicos y análisis predictivo.
+### Próximas funcionalidades
+
+- RAG (Retrieval-Augmented Generation)
+- Base de conocimiento vectorial
+- Clasificación automática de tickets
+- Asignación inteligente de técnicos
+- Analítica predictiva
+- Gestión Multiempresa
 
 ---
 
-## Autor
+# Autor
 
-**Adrián Miranda**
+## Adrián Rodrigo Miranda Riquelme
 
-Ingeniería de Software | Desarrollo Full Stack | Inteligencia Artificial
+**Ingeniero de Software**
 
-LinkedIn: *(agregaremos el enlace al finalizar la optimización del perfil)*
+Especializado en el diseño e implementación de soluciones tecnológicas utilizando Desarrollo Full Stack, Arquitectura de Software e Inteligencia Artificial para resolver necesidades de negocio.
 
-Portafolio: *(agregaremos adrianmiranda.cl cuando esté terminado)*
+### Contacto
+
+🌐 Portafolio  
+https://adrianmiranda.cl
+
+💼 LinkedIn  
+https://www.linkedin.com/in/adrian-miranda-riquelme/
