@@ -9,7 +9,7 @@
 <!-- Imagen principal del proyecto (Dashboard Administrador)-->
 <!-- ===================================================== -->
 <p align="center">
-  <img src="images/test.png" alt="Texto alternativo" width="500">
+  <img src="images/logo_adrian_miranda_final2.png" alt="Logo" width="500">
 </p>
 ---
 
