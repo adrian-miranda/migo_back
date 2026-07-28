@@ -1,24 +1,29 @@
 # MIGO
 
-> Plataforma SaaS para la gestión inteligente de soporte técnico, desarrollada con **Django REST Framework**, **React** e **Inteligencia Artificial** mediante **OpenAI**.
+> Plataforma SaaS para la gestión inteligente de soporte técnico, desarrollada con React, Django REST Framework e Inteligencia Artificial mediante OpenAI.
 
+<!-- ===================================================== -->
+<!-- HERO                                                   -->
+<!-- Título: Vista General de MIGO                          -->
+<!-- Imagen: images/test.png                -->
+<!-- Imagen principal del proyecto (Dashboard Administrador)-->
+<!-- ===================================================== -->
+<p align="center">
+  <img src="images/test.png" alt="Texto alternativo" width="500">
+</p>
 ---
 
 ## Descripción
 
-MIGO centraliza la gestión de incidencias de soporte técnico dentro de una organización, permitiendo que usuarios, técnicos y administradores trabajen sobre una misma plataforma.
+MIGO centraliza la gestión de incidencias de soporte técnico dentro de una organización, permitiendo a usuarios, técnicos y administradores trabajar sobre una misma plataforma.
 
 Además de administrar el ciclo completo de los tickets, incorpora Inteligencia Artificial para asistir en la resolución de incidencias, generar métricas de desempeño y apoyar la toma de decisiones mediante análisis operacionales.
-
-📘 **Case Study completo del proyecto**
-
-https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md
 
 ---
 
 ## Características Principales
 
-- Gestión completa del ciclo de vida de tickets.
+- Gestión completa de tickets.
 - Priorización automática de incidencias.
 - Panel independiente para Usuarios, Técnicos y Administradores.
 - Dashboards con indicadores operacionales.
@@ -30,123 +35,126 @@ https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md
 
 ---
 
-# Arquitectura
+## Arquitectura
 
-## Frontend
+Frontend
 
 - React
 - JavaScript
 - Axios
 - React Router DOM
 
-Repositorio:
-
-https://github.com/adrian-miranda/migo_front
-
----
-
-## Backend
+Backend
 
 - Python
 - Django
 - Django REST Framework
 
-Repositorio actual.
-
----
-
-## Base de Datos
+Base de Datos
 
 - MySQL
 
----
-
-## Servicios Integrados
+Servicios
 
 - OpenAI API
 
 ---
 
-# Documentación
+## Capturas
 
-La documentación técnica completa del proyecto se encuentra en:
+### Dashboard Administrador
 
-📄 **Case Study**
+<!-- ===================================================== -->
+<!-- Título: Dashboard Administrador                        -->
+<!-- Imagen: images/dashboard-admin.png                     -->
+<!-- Vista general de la operación del sistema              -->
+<!-- ===================================================== -->
 
-https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md
+---
+
+### Dashboard Técnico
+
+<!-- ===================================================== -->
+<!-- Título: Dashboard Técnico                              -->
+<!-- Imagen: images/dashboard-tecnico.png                   -->
+<!-- Gestión de tickets asignados                           -->
+<!-- ===================================================== -->
+
+---
+
+### Dashboard Usuario
+
+<!-- ===================================================== -->
+<!-- Título: Dashboard Usuario                              -->
+<!-- Imagen: images/dashboard-usuario.png                   -->
+<!-- Portal de creación y seguimiento de tickets            -->
+<!-- ===================================================== -->
+
+---
+
+### Gestión de Tickets + Inteligencia Artificial
+
+<!-- ===================================================== -->
+<!-- Título: Ticket con Asistente IA                        -->
+<!-- Imagen: images/ticket-ia.png                           -->
+<!-- Pantalla del ticket mostrando la ayuda de OpenAI       -->
+<!-- ===================================================== -->
+
+---
+
+### Analítica e Inteligencia Artificial
+
+<!-- ===================================================== -->
+<!-- Título: Dashboard Analítico                            -->
+<!-- Imagen: images/dashboard-analitica.png                 -->
+<!-- Métricas, gráficos y recomendaciones IA                -->
+<!-- ===================================================== -->
+
+---
+
+### Responsive Design
+
+<!-- ===================================================== -->
+<!-- Título: Responsive Design                              -->
+<!-- Imagen: images/responsive.png                          -->
+<!-- Desktop + Tablet + Mobile                              -->
+<!-- ===================================================== -->
+
+---
+
+## Documentación
+
+La documentación técnica completa se encuentra en:
+
+📄 `docs/case-study.md`
 
 Incluye:
 
-- Resumen Ejecutivo
-- Visión del Producto
-- Problema
-- Objetivos
-- Arquitectura Funcional
-- Arquitectura Técnica
-- Modelo de Datos
+- Arquitectura
+- Modelo de datos
 - Inteligencia Artificial
 - Seguridad
-- Stack Tecnológico
-- Despliegue
+- Stack tecnológico
 - Roadmap
 - Resultados
-- Aprendizajes
+- Conclusiones
 
 ---
 
-# Capturas
+## Estado del Proyecto
 
-> Próximamente se incorporarán capturas reales del sistema.
+Proyecto funcional desarrollado como plataforma SaaS para soporte técnico empresarial.
 
-- Dashboard Administrador
-- Dashboard Técnico
-- Dashboard Usuario
-- Gestión de Tickets
-- Asistente IA
-- Reportes
-- Analítica
+Actualmente contempla futuras mejoras relacionadas con RAG, clasificación automática de tickets, asignación inteligente de técnicos y análisis predictivo.
 
 ---
 
-# Repositorios
+## Autor
 
-## Frontend
+**Adrián Miranda**
 
-https://github.com/adrian-miranda/migo_front
+Ingeniería de Software | Desarrollo Full Stack | Inteligencia Artificial
 
-## Backend
+LinkedIn: *(agregaremos el enlace al finalizar la optimización del perfil)*
 
-https://github.com/adrian-miranda/migo_back
-
----
-
-# Estado del Proyecto
-
-Proyecto funcional desarrollado como plataforma SaaS para la gestión de soporte técnico empresarial.
-
-### Próximas funcionalidades
-
-- RAG (Retrieval-Augmented Generation)
-- Base de conocimiento vectorial
-- Clasificación automática de tickets
-- Asignación inteligente de técnicos
-- Analítica predictiva
-- Gestión Multiempresa
-
----
-
-# Autor
-
-## Adrián Rodrigo Miranda Riquelme
-
-**Ingeniero de Software**
-
-Especializado en el diseño e implementación de soluciones tecnológicas utilizando Desarrollo Full Stack, Arquitectura de Software e Inteligencia Artificial para resolver necesidades de negocio.
-
-### Contacto
-
-🌐 Portafolio  
-https://adrianmiranda.cl
-
-💼 LinkedIn  
-https://www.linkedin.com/in/adrian-miranda-riquelme/
+Portafolio: *(agregaremos adrianmiranda.cl cuando esté terminado)*
