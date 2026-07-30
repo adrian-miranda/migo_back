@@ -8,6 +8,7 @@
 <!-- Imagen: images/test.png                -->
 <!-- Imagen principal del proyecto (Dashboard Administrador)-->
 <!-- ===================================================== -->
+<h2 align="center">Index</h2>
 <p align="center">
   <img src="images/logo_adrian_miranda_final2.png" alt="Logo" width="500">
 </p>
