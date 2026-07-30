@@ -10,7 +10,7 @@
 <!-- ===================================================== -->
 <h2 align="center">Index</h2>
 <p align="center">
-  <img src="images/logo_adrian_miranda_final2.png" alt="Logo" width="500">
+  <img src="images/index.png" alt="index plataforma migo" width="500">
 </p>
 ---
 
