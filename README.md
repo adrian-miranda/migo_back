@@ -90,7 +90,7 @@ Servicios
 <!-- ===================================================== -->
 <h2 align="center">Dashboard Técnico</h2>
 <p align="center">
-  <img src="images/tecnico/dashboard.png" alt="dashboard plataforma migo Tecnico" width="1024">
+  <img src="images/tecnico/dashboard tecnico.png" alt="dashboard plataforma migo Tecnico" width="1024">
 </p>
 <br>
 <h2 align="center">Collage Dashboard Técnico</h2>
