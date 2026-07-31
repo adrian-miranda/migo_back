@@ -70,7 +70,7 @@ Servicios
 <!-- Imagen: images/dashboard-admin.png                     -->
 <!-- Vista general de la operación del sistema              -->
 <!-- ===================================================== -->
-<h2 align="center">Dashboard</h2>
+<h2 align="center">Dashboard Administrador</h2>
 <p align="center">
   <img src="images/admin/dashboard.png" alt="dashboard plataforma migo admin" width="1024">
 </p>
@@ -88,7 +88,15 @@ Servicios
 <!-- Imagen: images/dashboard-tecnico.png                   -->
 <!-- Gestión de tickets asignados                           -->
 <!-- ===================================================== -->
-
+<h2 align="center">Dashboard Técnico</h2>
+<p align="center">
+  <img src="images/tecnico/dashboard.png" alt="dashboard plataforma migo Tecnico" width="1024">
+</p>
+<br>
+<h2 align="center">Collage Dashboard Técnico</h2>
+<p align="center">
+  <img src="images/tecnico/collague v1.png" alt="Collage Dashboard plataforma migo Tecnico" width="1024">
+</p>
 ---
 
 ### Dashboard Usuario
