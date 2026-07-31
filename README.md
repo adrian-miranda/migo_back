@@ -106,7 +106,15 @@ Servicios
 <!-- Imagen: images/dashboard-usuario.png                   -->
 <!-- Portal de creación y seguimiento de tickets            -->
 <!-- ===================================================== -->
-
+<h2 align="center">Dashboard Usuario</h2>
+<p align="center">
+  <img src="images/tecnico/dashboard tecnico.png" alt="dashboard plataforma migo Tecnico" width="1024">
+</p>
+<br>
+<h2 align="center">Collage Dashboard Usuario</h2>
+<p align="center">
+  <img src="images/tecnico/collague v1.png" alt="Collage Dashboard plataforma migo Tecnico" width="1024">
+</p>
 ---
 
 ### Gestión de Tickets + Inteligencia Artificial
