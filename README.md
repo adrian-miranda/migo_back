@@ -108,12 +108,12 @@ Servicios
 <!-- ===================================================== -->
 <h2 align="center">Dashboard Usuario</h2>
 <p align="center">
-  <img src="images/tecnico/dashboard tecnico.png" alt="dashboard plataforma migo Tecnico" width="1024">
+  <img src="images/usuario/mockup desktop usuario.png" alt="dashboard plataforma migo Usuario" width="1024">
 </p>
 <br>
 <h2 align="center">Collage Dashboard Usuario</h2>
 <p align="center">
-  <img src="images/tecnico/collague v1.png" alt="Collage Dashboard plataforma migo Tecnico" width="1024">
+  <img src="images/usuario/collague v1.png" alt="Collage Dashboard plataforma migo Usuario" width="1024">
 </p>
 ---
 
