@@ -161,7 +161,7 @@ Servicios
 
 La documentación técnica completa se encuentra en:
 
-📄 `docs/case-study.md`
+📄 [Case Study de MIGO](https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md)
 
 Incluye:
 
