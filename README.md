@@ -124,10 +124,13 @@ Servicios
 <!-- Imagen: images/ticket-ia.png                           -->
 <!-- Pantalla del ticket mostrando la ayuda de OpenAI       -->
 <!-- ===================================================== -->
-
+<h2 align="center">Gestión de ticket</h2>
+<p align="center">
+  <img src="images/admin/gestion ticket.png" alt="Collage Dashboard plataforma migo Usuario" width="1024">
+</p>
 ---
 
-### Analítica e Inteligencia Artificial
+### Analítica e Inteligencia Artificial Admin
 
 <!-- ===================================================== -->
 <!-- Título: Dashboard Analítico                            -->
@@ -135,9 +138,16 @@ Servicios
 <!-- Métricas, gráficos y recomendaciones IA                -->
 <!-- ===================================================== -->
 
+<h2 align="center">Analítica e Inteligencia Artificial</h2>
+<p align="center">
+  <img src="images/admin/analisis ia.png" alt="Collage Dashboard plataforma migo Usuario" width="1024">
+</p>
+<p align="center">
+  <img src="images/admin/alertas ia.png" alt="Collage Dashboard plataforma migo Usuario" width="1024">
+</p>
 ---
 
-### Responsive Design
+<!-- ### Responsive Design --> 
 
 <!-- ===================================================== -->
 <!-- Título: Responsive Design                              -->
