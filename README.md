@@ -197,8 +197,10 @@ Actualmente contempla futuras mejoras relacionadas con RAG, clasificación autom
 
 **Adrián Miranda**
 
-Ingeniería de Software | Desarrollo Full Stack | Inteligencia Artificial
+*Ingeniero de Software | Desarrollo Full Stack | Arquitectura de Soluciones | Inteligencia Artificial*
 
-LinkedIn: *(agregaremos el enlace al finalizar la optimización del perfil)*
+🌐 **Portafolio:**  [adrianmiranda.cl](https://adrianmiranda.cl)
 
-Portafolio: *(agregaremos adrianmiranda.cl cuando esté terminado)*
+💼 **LinkedIn:** [Adrián Miranda](https://www.linkedin.com/in/adrian-miranda-riquelme/)
+
+📚 **Case Study:** [Documentación Técnica de MIGO](https://github.com/adrian-miranda/migo_back/blob/master/docs/case-study.md)
