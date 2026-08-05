@@ -1,4 +1,13 @@
-# MIGO
+# MIGO Backend
+
+> Backend desarrollado en Python y Django REST Framework para la plataforma SaaS MIGO, encargado de administrar la lógica de negocio, la gestión de incidencias, la autenticación, la persistencia de datos y la integración con Inteligencia Artificial mediante OpenAI.
+
+![Python](https://img.shields.io/badge/Python-3.x-3776AB?logo=python)
+![Django](https://img.shields.io/badge/Django-5.x-092E20?logo=django)
+![Django REST Framework](https://img.shields.io/badge/Django_REST_Framework-API-092E20?logo=django)
+![MySQL](https://img.shields.io/badge/MySQL-Database-4479A1?logo=mysql)
+![OpenAI](https://img.shields.io/badge/OpenAI-API-412991?logo=openai)
+![Git](https://img.shields.io/badge/Git-Version_Control-F05032?logo=git)
 
 > Plataforma SaaS para la gestión inteligente de soporte técnico, desarrollada con React, Django REST Framework e Inteligencia Artificial mediante OpenAI.
 
